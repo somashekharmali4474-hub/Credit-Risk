@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deleted Customers</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f6fa;
+            color: #263238;
+        }
+
+        .header {
+            background: #172554;
+            color: white;
+            padding: 22px 30px;
+        }
+
+        .container {
+            padding: 30px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn, .restore-btn, .delete-btn {
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .back-btn {
+            background: #334155;
+        }
+
+        .restore-btn {
+            background: #16a34a;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+        }
+
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 2px 8px #00000010;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 950px;
+        }
+
+        th, td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #eff6ff;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            color: #16a34a;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h2>Deleted Customers</h2>
+    <p>View, restore or permanently delete customer records</p>
+</div>
+
+<div class="container">
+
+    <div class="top">
+        <div>
+            <h2>Deleted Customer Records</h2>
+            <p>Customers moved from the active customer list.</p>
+        </div>
+
+        <button class="back-btn"
+                onclick="window.location.href='/dashboard.html'">
+            Back to Dashboard
+        </button>
+    </div>
+
+    <p id="message" class="message"></p>
+
+    <div class="table-container">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Annual Income</th>
+                <th>Credit Limit</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+
+            <tbody id="customerTable">
+            <tr>
+                <td colspan="8" class="empty">Loading customers...</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+
+    const API = "/api/customers";
+
+    // Check Login
+    async function checkLogin() {
+        try {
+            const response = await fetch("/api/auth/me");
+
+            if (!response.ok) {
+                window.location.href = "/login.html";
+                return false;
+            }
+
+            return true;
+
+        } catch (error) {
+            window.location.href = "/login.html";
+            return false;
+        }
+    }
+
+    // Load Deleted Customers
+    async function loadDeletedCustomers() {
+
+        const table = document.getElementById("customerTable");
+
+        try {
+            const response = await fetch(API + "/deleted");
+
+            if (!response.ok) {
+                throw new Error("Unable to load deleted customers");
+            }
+
+            const customers = await response.json();
+
+            table.innerHTML = "";
+
+            if (customers.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty">
+                            No deleted customers found.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            customers.forEach(customer => {
+
+                const row = document.createElement("tr");
+
+                const values = [
+                    customer.customerId,
+                    customer.customerName,
+                    customer.email,
+                    customer.phone,
+                    customer.address,
+                    customer.annualIncome,
+                    customer.creditLimit
+                ];
+
+                values.forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value ?? "-";
+                    row.appendChild(cell);
+                });
+
+                const actions = document.createElement("td");
+
+                // Restore Button
+                const restoreButton = document.createElement("button");
+
+                restoreButton.textContent = "Restore";
+                restoreButton.className = "restore-btn";
+
+                restoreButton.onclick = () =>
+                    restoreCustomer(customer.deletedId);
+
+                // Permanently Delete Button
+                const deleteButton = document.createElement("button");
+
+                deleteButton.textContent = "Delete Permanently";
+                deleteButton.className = "delete-btn";
+                deleteButton.style.marginLeft = "6px";
+
+                deleteButton.onclick = () =>
+                    permanentlyDeleteCustomer(customer.deletedId);
+
+                actions.appendChild(restoreButton);
+                actions.appendChild(deleteButton);
+
+                row.appendChild(actions);
+                table.appendChild(row);
+
+            });
+
+        } catch (error) {
+
+            console.error("Loading error:", error);
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty">
+                        ${error.message}
+                    </td>
+                </tr>`;
+        }
+    }
+
+    // Restore Customer
+    async function restoreCustomer(id) {
+
+        if (!id) {
+            alert("Deleted customer ID is missing.");
+            return;
+        }
+
+        if (!confirm("Do you want to restore this customer?")) {
+            return;
+        }
+
+        try {
+
+            const response = await fetch(`${API}/${id}/restore`, {
+                method: "PUT"
+            });
+
+            const result = await response.text();
+
+            console.log("Restore status:", response.status);
+            console.log("Restore response:", result);
+
+            if (!response.ok) {
+                throw new Error(result || "Customer restoration failed");
+            }
+
+            document.getElementById("message").textContent =
+                "Customer restored successfully!";
+
+            await loadDeletedCustomers();
+
+        } catch (error) {
+
+            alert("Restore Failed: " + error.message);
+            console.error(error);
+        }
+    }
+
+    // Permanently Delete Customer
+    async function permanentlyDeleteCustomer(id) {
+
+        if (!id) {
+            alert("Deleted customer ID is missing.");
+            return;
+        }
+
+        if (!confirm("Are you sure? This customer will be permanently removed.")) {
+            return;
+        }
+
+        try {
+
+            const response = await fetch(`${API}/${id}/permanent`, {
+                method: "DELETE"
+            });
+
+            const result = await response.text();
+
+            if (!response.ok) {
+                throw new Error(result || "Permanent deletion failed");
+            }
+
+            document.getElementById("message").textContent =
+                "Customer permanently deleted.";
+
+            await loadDeletedCustomers();
+
+        } catch (error) {
+
+            alert("Delete Failed: " + error.message);
+            console.error(error);
+        }
+    }
+
+    // Initialize Page
+    async function initializePage() {
+
+        const loggedIn = await checkLogin();
+
+        if (loggedIn) {
+            await loadDeletedCustomers();
+        }
+    }
+
+    initializePage();
+
+</script>
+
+</body>
+</html>

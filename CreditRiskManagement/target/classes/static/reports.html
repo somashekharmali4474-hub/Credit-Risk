@@ -1,0 +1,505 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Risk Management - Reports</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f3f5fa;
+            color: #17233d;
+        }
+
+        .sidebar {
+            width: 240px;
+            height: 100vh;
+            position: fixed;
+            background: #192951;
+            color: white;
+            padding: 25px 18px;
+        }
+
+        .logo {
+            font-size: 21px;
+            font-weight: bold;
+            line-height: 1.5;
+            margin-bottom: 40px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #dbeafe;
+            text-decoration: none;
+            padding: 14px;
+            margin-bottom: 9px;
+            border-radius: 7px;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #2861e8;
+            color: white;
+        }
+
+        .main {
+            margin-left: 240px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #64748b;
+            margin-top: 7px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 7px;
+            padding: 11px 17px;
+            cursor: pointer;
+        }
+
+        .logout {
+            background: #dc2626;
+            color: white;
+        }
+
+        .refresh {
+            background: #2563eb;
+            color: white;
+            margin-left: 5px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .card, .panel {
+            background: white;
+            padding: 23px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #0000000d;
+        }
+
+        .card p {
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            color: #2055dc;
+            font-size: 23px;
+            overflow-wrap: anywhere;
+        }
+
+        .panel {
+            margin-bottom: 25px;
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 1px solid #e8edf5;
+        }
+
+        th {
+            background: #f5f7fc;
+            color: #34445f;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 12px;
+        }
+
+        .message {
+            margin-top: 15px;
+            color: #64748b;
+        }
+
+        .search {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #ccd5e3;
+            border-radius: 7px;
+        }
+
+        @media(max-width: 1000px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width: 700px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .logo {
+                margin-bottom: 15px;
+            }
+
+            .sidebar a {
+                display: inline-block;
+                padding: 10px;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 18px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        @media print {
+            .sidebar, .header button, .search {
+                display: none;
+            }
+
+            .main {
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="logo">💳 Credit Risk<br>Management</div>
+
+    <a href="/dashboard.html">🏠 Dashboard</a>
+    <a href="/dashboard.html#customers">👥 Customers</a>
+    <a href="/reports.html" class="active">📊 Reports</a>
+    <a href="/payments.html">💰 Payments</a>
+    <a href="/deleted-customers.html">🗑️ Deleted Customers</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</aside>
+
+<main class="main">
+
+    <div class="header">
+        <div>
+            <h1>Credit Risk Reports</h1>
+            <p>Customer credit limit and income analysis</p>
+        </div>
+
+        <div>
+            <button class="refresh" onclick="loadReports()">Refresh</button>
+            <button class="refresh" onclick="window.print()">Print</button>
+        </div>
+    </div>
+
+    <section class="cards">
+
+        <div class="card">
+            <p>Total Customers</p>
+            <h2 id="totalCustomers">0</h2>
+        </div>
+
+        <div class="card">
+            <p>Active Customers</p>
+            <h2 id="activeCustomers">0</h2>
+        </div>
+
+        <div class="card">
+            <p>Total Annual Income</p>
+            <h2 id="totalIncome">₹0</h2>
+        </div>
+
+        <div class="card">
+            <p>Total Credit Limit</p>
+            <h2 id="totalCredit">₹0</h2>
+        </div>
+
+    </section>
+
+    <section class="panel">
+
+        <h2>Customer Credit Details</h2>
+
+        <input
+                type="text"
+                id="searchCustomer"
+                class="search"
+                placeholder="Search customer name or email..."
+                oninput="filterReports()"
+        >
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Email</th>
+                    <th>Annual Income</th>
+                    <th>Credit Limit</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+
+                <tbody id="reportTable">
+                <tr>
+                    <td colspan="6">Loading reports...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="message" id="reportMessage"></p>
+
+    </section>
+
+</main>
+
+<script>
+
+    const API = "/api/customers";
+
+    let allCustomers = [];
+
+    function money(value) {
+        return Number(value || 0).toLocaleString("en-IN", {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 2
+        });
+    }
+
+    async function checkLogin() {
+        try {
+            const response = await fetch("/api/auth/me");
+
+            if (!response.ok) {
+                window.location.href = "/login.html";
+                return false;
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error("Login check error:", error);
+            document.getElementById("reportMessage").textContent =
+                "Cannot connect to server.";
+            return false;
+        }
+    }
+
+    async function loadReports() {
+
+        const table = document.getElementById("reportTable");
+        const message = document.getElementById("reportMessage");
+
+        table.innerHTML =
+            '<tr><td colspan="6">Loading customer records...</td></tr>';
+
+        message.textContent = "";
+
+        try {
+
+            const response = await fetch(API);
+
+            if (!response.ok) {
+                throw new Error("Customer API error: " + response.status);
+            }
+
+            const data = await response.json();
+
+            if (!Array.isArray(data)) {
+                throw new Error("Customer API did not return a list.");
+            }
+
+            allCustomers = data;
+
+            const active = allCustomers.filter(customer =>
+                String(customer.status || "").toUpperCase() === "ACTIVE"
+            );
+
+            const income = allCustomers.reduce(
+                (sum, customer) =>
+                    sum + Number(customer.annualIncome || 0), 0
+            );
+
+            const credit = allCustomers.reduce(
+                (sum, customer) =>
+                    sum + Number(customer.creditLimit || 0), 0
+            );
+
+            document.getElementById("totalCustomers").textContent =
+                allCustomers.length;
+
+            document.getElementById("activeCustomers").textContent =
+                active.length;
+
+            document.getElementById("totalIncome").textContent =
+                money(income);
+
+            document.getElementById("totalCredit").textContent =
+                money(credit);
+
+            displayReports(allCustomers);
+
+            message.textContent =
+                "Reports loaded successfully. Total records: " +
+                allCustomers.length;
+
+        } catch (error) {
+
+            console.error("Reports loading error:", error);
+
+            table.innerHTML =
+                '<tr><td colspan="6">Unable to load customer records.</td></tr>';
+
+            message.textContent = error.message;
+        }
+    }
+
+    function displayReports(customers) {
+
+        const table = document.getElementById("reportTable");
+
+        table.innerHTML = "";
+
+        if (customers.length === 0) {
+
+            table.innerHTML =
+                '<tr><td colspan="6">No customers found.</td></tr>';
+
+            return;
+        }
+
+        customers.forEach(customer => {
+
+            const row = document.createElement("tr");
+
+            const values = [
+                customer.customerId,
+                customer.customerName,
+                customer.email,
+                money(customer.annualIncome),
+                money(customer.creditLimit)
+            ];
+
+            values.forEach(value => {
+
+                const cell = document.createElement("td");
+
+                cell.textContent = value ?? "-";
+
+                row.appendChild(cell);
+            });
+
+            const statusCell = document.createElement("td");
+
+            const badge = document.createElement("span");
+
+            badge.className = "status";
+
+            badge.textContent = customer.status || "ACTIVE";
+
+            statusCell.appendChild(badge);
+
+            row.appendChild(statusCell);
+
+            table.appendChild(row);
+        });
+    }
+
+    function filterReports() {
+
+        const keyword = document
+            .getElementById("searchCustomer")
+            .value.toLowerCase()
+            .trim();
+
+        const filtered = allCustomers.filter(customer =>
+
+            String(customer.customerName || "")
+                .toLowerCase().includes(keyword) ||
+
+            String(customer.email || "")
+                .toLowerCase().includes(keyword)
+        );
+
+        displayReports(filtered);
+    }
+
+    async function logout() {
+
+        try {
+            await fetch("/api/auth/logout", {
+                method: "POST"
+            });
+        } finally {
+            window.location.href = "/login.html";
+        }
+    }
+
+    async function initializePage() {
+
+        const loggedIn = await checkLogin();
+
+        if (loggedIn) {
+            await loadReports();
+        }
+    }
+
+    initializePage();
+
+</script>
+
+</body>
+</html>

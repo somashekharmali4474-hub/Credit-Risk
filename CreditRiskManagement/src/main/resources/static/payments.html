@@ -1,0 +1,426 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Risk Management - Payments</title>
+
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+        body{background:#f3f5fa;color:#17233d}
+        .sidebar{width:240px;height:100vh;position:fixed;background:#192951;color:white;padding:25px 18px}
+        .logo{font-size:21px;font-weight:bold;line-height:1.5;margin-bottom:40px}
+        .sidebar a{display:block;color:#dbeafe;text-decoration:none;padding:14px;margin-bottom:9px;border-radius:7px}
+        .sidebar a:hover,.sidebar a.active{background:#2861e8;color:white}
+        .main{margin-left:240px;padding:30px}
+        .header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:30px}
+        .header h1{font-size:28px}
+        .header p{color:#64748b;margin-top:7px}
+        button{border:0;border-radius:7px;padding:11px 17px;cursor:pointer}
+        .logout{background:#dc2626;color:white}
+        .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:25px}
+        .card,.panel{background:white;padding:23px;border-radius:12px;box-shadow:0 3px 12px #0000000d}
+        .card p{color:#64748b;margin-bottom:15px}
+        .card h2{color:#2055dc;font-size:23px;overflow-wrap:anywhere}
+        .panel{margin-bottom:25px}
+        .panel h2{margin-bottom:20px;font-size:21px}
+        .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+        .field label{display:block;margin-bottom:8px;font-weight:bold}
+        .field input,.field select{width:100%;padding:12px;border:1px solid #ccd5e3;border-radius:7px;font-size:15px;background:white}
+        .submit{background:#245de0;color:white;margin-top:20px;padding:12px 25px}
+        .clear{background:#e2e8f0;margin-top:20px}
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;min-width:750px}
+        th,td{text-align:left;padding:14px;border-bottom:1px solid #e8edf5}
+        th{background:#f5f7fc;color:#34445f}
+        .status{font-weight:bold}
+        .paid{color:#16834a}
+        .pending{color:#d58a08}
+        .message{margin-top:14px;color:#64748b}
+        @media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:700px){
+            .sidebar{width:100%;height:auto;position:relative}
+            .logo{margin-bottom:15px}
+            .sidebar a{display:inline-block;padding:10px}
+            .main{margin-left:0;padding:18px}
+            .cards,.form-grid{grid-template-columns:1fr}
+            .header{align-items:flex-start;flex-direction:column}
+        }
+    </style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="logo">💳 Credit Risk<br>Management</div>
+    <a href="/dashboard.html">🏠 Dashboard</a>
+    <a href="/dashboard.html#customers">👥 Customers</a>
+    <a href="/reports.html">📊 Reports</a>
+    <a class="active" href="/payments.html">💰 Payments</a>
+    <a href="/deleted-customers.html">🗑️ Deleted Customers</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</aside>
+
+<main class="main">
+
+    <div class="header">
+        <div>
+            <h1>Payments</h1>
+            <p>Customer payment tracking and management</p>
+        </div>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+
+    <section class="cards">
+        <div class="card">
+            <p>Total Payments</p>
+            <h2 id="totalPayments">0</h2>
+        </div>
+        <div class="card">
+            <p>Total Paid</p>
+            <h2 id="totalPaid">₹0</h2>
+        </div>
+        <div class="card">
+            <p>Total Pending</p>
+            <h2 id="totalPending">₹0</h2>
+        </div>
+        <div class="card">
+            <p>Completed Payments</p>
+            <h2 id="completedPayments">0</h2>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>➕ Add New Payment</h2>
+
+        <form id="paymentForm">
+            <div class="form-grid">
+
+                <div class="field">
+                    <label for="customerId">Select Customer</label>
+                    <select id="customerId" required>
+                        <option value="">Loading customers...</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="amount">Payment Amount (₹)</label>
+                    <input type="number" id="amount" min="0.01"
+                           step="0.01" placeholder="Enter amount" required>
+                </div>
+
+                <div class="field">
+                    <label for="paymentDate">Payment Date</label>
+                    <input type="date" id="paymentDate" required>
+                </div>
+
+                <div class="field">
+                    <label for="paymentMethod">Payment Method</label>
+                    <select id="paymentMethod" required>
+                        <option value="">Select Method</option>
+                        <option value="CASH">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="CARD">Debit/Credit Card</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="paymentStatus">Payment Status</label>
+                    <select id="paymentStatus" required>
+                        <option value="PAID">Paid</option>
+                        <option value="PENDING">Pending</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <button type="submit" class="submit">Save Payment</button>
+            <button type="reset" class="clear">Clear</button>
+
+            <p id="formMessage" class="message"></p>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Payment History</h2>
+
+        <input type="text" id="paymentSearch"
+               placeholder="Search by customer ID..."
+               style="width:100%;padding:12px;margin-bottom:15px;border:1px solid #ccd5e3;border-radius:7px;"
+               oninput="filterPayments()">
+
+        <select id="statusFilter"
+                onchange="filterPayments()"
+                style="padding:12px;margin-bottom:15px;border:1px solid #ccd5e3;border-radius:7px;">
+            <option value="ALL">All Payments</option>
+            <option value="PAID">Paid</option>
+            <option value="PENDING">Pending</option>
+        </select>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Customer ID</th>
+                    <th>Amount</th>
+                    <th>Payment Date</th>
+                    <th>Payment Method</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody id="paymentTable">
+                <tr><td colspan="6">Loading payments...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p id="tableMessage" class="message"></p>
+    </section>
+
+</main>
+
+<script>
+    const CUSTOMER_API="/api/customers";
+    const PAYMENT_API="/api/payments";
+
+    let allPayments=[];
+
+    function money(value){
+        return Number(value||0).toLocaleString("en-IN",{
+            style:"currency",
+            currency:"INR",
+            maximumFractionDigits:2
+        });
+    }
+
+    async function checkLogin(){
+        try{
+            const response=await fetch("/api/auth/me");
+            if(!response.ok){
+                window.location.href="/login.html";
+                return false;
+            }
+            return true;
+        }catch(error){
+            alert("Cannot connect to server.");
+            return false;
+        }
+    }
+
+    async function loadCustomers(){
+        const select=document.getElementById("customerId");
+
+        try{
+            const response=await fetch(CUSTOMER_API);
+            if(!response.ok) throw new Error("Unable to load customers");
+
+            const customers=await response.json();
+
+            select.innerHTML='<option value="">Select Customer</option>';
+
+            customers.forEach(customer=>{
+                const option=document.createElement("option");
+                option.value=customer.customerId;
+                option.textContent=
+                    customer.customerName+" (ID: "+customer.customerId+")";
+                select.appendChild(option);
+            });
+
+        }catch(error){
+            select.innerHTML='<option value="">Could not load customers</option>';
+            console.error(error);
+        }
+    }
+
+    async function loadPayments(){
+        const table=document.getElementById("paymentTable");
+
+        try{
+            const response=await fetch(PAYMENT_API);
+            if(!response.ok) throw new Error("Payment API is not available");
+
+            allPayments=await response.json();
+
+            const paid=allPayments.filter(p=>
+                String(p.status).toUpperCase()==="PAID"
+            );
+
+            const pending=allPayments.filter(p=>
+                String(p.status).toUpperCase()==="PENDING"
+            );
+
+            const paidAmount=paid.reduce(
+                (sum,p)=>sum+Number(p.amount||0),0
+            );
+
+            const pendingAmount=pending.reduce(
+                (sum,p)=>sum+Number(p.amount||0),0
+            );
+
+            document.getElementById("totalPayments").textContent=
+                allPayments.length;
+
+            document.getElementById("totalPaid").textContent=
+                money(paidAmount);
+
+            document.getElementById("totalPending").textContent=
+                money(pendingAmount);
+
+            document.getElementById("completedPayments").textContent=
+                paid.length;
+
+            displayPayments(allPayments);
+
+            document.getElementById("tableMessage").textContent=
+                "Payment records loaded successfully.";
+
+        }catch(error){
+            table.innerHTML=
+                '<tr><td colspan="6">Payment backend is not connected.</td></tr>';
+
+            document.getElementById("tableMessage").textContent=error.message;
+            console.error(error);
+        }
+    }
+
+    function displayPayments(payments){
+        const table=document.getElementById("paymentTable");
+        table.innerHTML="";
+
+        if(payments.length===0){
+            table.innerHTML=
+                '<tr><td colspan="6">No payment records found.</td></tr>';
+            return;
+        }
+
+        payments.forEach(payment=>{
+            const row=document.createElement("tr");
+
+            const values=[
+                payment.paymentId,
+                payment.customerId,
+                money(payment.amount),
+                payment.paymentDate,
+                payment.paymentMethod
+            ];
+
+            values.forEach(value=>{
+                const cell=document.createElement("td");
+                cell.textContent=value??"-";
+                row.appendChild(cell);
+            });
+
+            const statusCell=document.createElement("td");
+            const status=document.createElement("span");
+            status.textContent=payment.status;
+            status.className="status "+
+                (String(payment.status).toUpperCase()==="PAID"?"paid":"pending");
+
+            statusCell.appendChild(status);
+            row.appendChild(statusCell);
+
+            table.appendChild(row);
+        });
+    }
+
+    function filterPayments(){
+        const search=document.getElementById("paymentSearch")
+            .value.trim().toLowerCase();
+
+        const status=document.getElementById("statusFilter").value;
+
+        const filtered=allPayments.filter(payment=>{
+            const matchCustomer=String(payment.customerId)
+                .toLowerCase().includes(search);
+
+            const matchStatus=status==="ALL"||
+                String(payment.status).toUpperCase()===status;
+
+            return matchCustomer&&matchStatus;
+        });
+
+        displayPayments(filtered);
+    }
+
+    document.getElementById("paymentForm")
+        .addEventListener("submit",async function(event){
+
+            event.preventDefault();
+
+            const payment={
+                customerId:Number(document.getElementById("customerId").value),
+                amount:Number(document.getElementById("amount").value),
+                paymentDate:document.getElementById("paymentDate").value,
+                paymentMethod:document.getElementById("paymentMethod").value,
+                status:document.getElementById("paymentStatus").value
+            };
+
+            const message=document.getElementById("formMessage");
+
+            if(!Number.isInteger(payment.customerId)||payment.customerId<=0||
+                !Number.isFinite(payment.amount)||payment.amount<=0){
+                message.textContent="Please enter valid payment details.";
+                return;
+            }
+
+            message.textContent="Saving payment...";
+
+            try{
+                const response=await fetch(PAYMENT_API,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify(payment)
+                });
+
+                if(!response.ok){
+                    const errorText=await response.text();
+                    throw new Error(errorText||"Unable to save payment");
+                }
+
+                message.textContent="Payment saved successfully!";
+
+                this.reset();
+                setToday();
+
+                await loadPayments();
+
+            }catch(error){
+                message.textContent="Payment error: "+error.message;
+                console.error(error);
+            }
+        });
+
+    function setToday(){
+        const today=new Date();
+        const localDate=new Date(
+            today.getTime()-today.getTimezoneOffset()*60000
+        ).toISOString().split("T")[0];
+
+        document.getElementById("paymentDate").value=localDate;
+    }
+
+    async function logout(){
+        try{
+            await fetch("/api/auth/logout",{method:"POST"});
+        }finally{
+            window.location.href="/login.html";
+        }
+    }
+
+    async function initializePage(){
+        const loggedIn=await checkLogin();
+        if(!loggedIn)return;
+
+        setToday();
+        await loadCustomers();
+        await loadPayments();
+    }
+
+    initializePage();
+</script>
+
+</body>
+</html>
